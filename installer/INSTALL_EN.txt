@@ -1,0 +1,93 @@
+ZETMAR COLOR (curves, black & white, LUT, toning) - plug-in for Photoshop Elements and Photoshop
+Zetmar - Cyfrowy Przyjaciel, zetmar.net.pl
+VERSION 1.0.0
+=================================================================
+
+WHAT IT DOES
+Point curves (RGB, R, G, B), black & white with a color mixer, sepia, monochrome, duotone,
+LUTs from .cube files with a thumbnail library and split toning of highlights and
+shadows - in one window with a before/after preview.
+Order: curves, black & white, duotone, LUT, toning, overall strength.
+
+IMPORTANT
+This is a filter, not an adjustment layer: it permanently changes the active layer.
+Recommended workflow: Ctrl+J (duplicate layer), the filter, then the layer opacity in
+the Layers panel. Elements works mostly in 8 bits - the plug-in supports 8 and 16 bit.
+
+REQUIREMENTS
+- Windows 10/11 64-bit
+- Photoshop Elements 2024 or newer (tested: 2026; 2024 and 2025 untested, should work)
+  or current Adobe Photoshop
+- RGB images, 8 or 16 bits per channel
+
+INSTALLATION (option 1: installer)
+1. Close Photoshop Elements / Photoshop.
+2. Run ZetmarKolor_Setup.exe. It detects the installed Adobe programs and offers to
+   install into each of them. Untick the ones you do not want.
+3. Start the program again.
+
+INSTALLATION (option 2: manual, from the ZIP package)
+1. Close Photoshop Elements / Photoshop.
+2. Unpack the ZIP package to any folder.
+3. Copy ZetmarKolor_64.8bf into the plug-ins folder (preferably into a Zetmar subfolder;
+   administrator rights required):
+   Photoshop Elements:  C:\Program Files\Adobe\Photoshop Elements <version>\Plug-Ins\Zetmar\
+   Photoshop:           C:\Program Files\Adobe\Adobe Photoshop <version>\Plug-ins\Zetmar\
+   Without administrator rights (Elements only): copy the plug-in to any folder,
+   e.g. Documents\Plugins, and point Elements to it:
+   Edit > Preferences > Plug-Ins > Additional Plug-Ins Folder.
+4. Copy the contents of the LUTs folder (with subfolders) to C:\ProgramData\ZetmarKolor\LUTs\
+   (or to any folder - the plug-in will let you choose it later).
+5. Start the program again.
+
+INSTALLATION (option 3: script from the ZIP package)
+Right-click install.ps1 > Run with PowerShell.
+The script asks for administrator rights, copies the plug-in into every Photoshop /
+Elements found and the LUTs into C:\ProgramData\ZetmarKolor\LUTs.
+
+USAGE
+1. Recommended: duplicate the layer (Ctrl+J) - the filter permanently changes the active layer.
+2. Menu: Filter > Zetmar > Kolor (krzywe, LUT, toning)...
+3. "Curves" tab: click on the graph to add a point, drag to move it, right-click or Del
+   to delete it, arrow keys move it by 1 level. Channel: RGB, Red, Green, Blue.
+   The Input/Output fields set the point exactly (0-255).
+   "Luminosity only" - the RGB curve changes brightness without changing colors.
+   Ready-made shapes: the "Preset" list (S-curves, matte, cross-process and more).
+4. "LUT" tab: "Choose..." selects any .cube file; the "LUT strength" slider blends
+   the result with the original (0-100%). Order: curves first, then the LUT.
+5a. "B&W" tab: Black & white, Sepia or Monochrome (one color) mode.
+   Six sliders (Reds ... Magentas, -200...300%) set how bright each color becomes in
+   gray; "Filter color" sets them like classic photographic filters.
+   Sepia uses a fixed warm hue ("Tint amount" slider), monochrome any "Hue".
+5d. "Duotone" tab (gradient map): dark areas get the shadow color, bright areas the
+   highlight color. Pick the colors with "Change...", by clicking a swatch or by typing
+   a HEX code. "Midpoint" to the left = more highlight color; "Amount" blends with
+   the original. Ready-made pairs: navy/orange, green/gold, purple/pink, brown/cream,
+   black/teal. Gray is computed by the mixer from the "B&W" tab.
+5b. "Toning" tab: a separate color (hue + amount) for highlights and for shadows,
+   "Balance" moves the border between them. Presets: classic, teal & orange and more.
+5c. "Library" tab: thumbnails of the LUTs in C:\ProgramData\ZetmarKolor\LUTs computed
+   on your photo. Click a thumbnail to apply the LUT. "Add files..." copies .cube files
+   into the library (broken files are rejected), "Delete" moves the selected files to
+   the Recycle Bin (they can be restored). Library subfolders are categories.
+   "Change..." lets you choose another library folder.
+6. Preview: "After", "Before" or "Split: before | after". Holding the mouse button
+   on the preview shows "before".
+7. "Overall" (at the bottom of the window) blends the whole result with the original.
+   Click OK. Ctrl+F repeats the filter with the last settings.
+   Note: log LUTs (S-Log, V-Log etc.) need a photo in the matching space,
+   otherwise they look wrong.
+7b. Below the preview: "Save look..." saves the whole look (curves, B&W, duotone, LUT,
+   toning, overall strength) to a .zklook file, "Load look..." restores it. "Export to
+   .cube..." saves the whole current look as a 33x33x33 LUT for use in other programs.
+8. The window language (Polish / English) is set at the top of the window,
+   in the "Language / Język" box.
+The bundled LUTs (60 original Zetmar LUTs) are grouped in the Library into categories:
+Seasons, Weather, Light, Black and White, Color Enhancement. Recommended start: 25-50% strength.
+Diagnostics (if something goes wrong): create an empty file %APPDATA%\ZetmarKolor\debug.flag -
+a "Test" tab appears and every run saves a diagnostic_report.txt report.
+
+UNINSTALL
+Windows Settings > Apps > "Zetmar Kolor" > Uninstall,
+or install.ps1 -Uninstall, or manually delete ZetmarKolor_64.8bf from the plug-ins folder
+and the C:\ProgramData\ZetmarKolor folder.

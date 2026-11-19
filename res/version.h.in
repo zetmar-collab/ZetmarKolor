@@ -1,0 +1,6 @@
+// Generowane przez CMake z version.txt - nie edytuj.
+#define ZK_VER_MAJOR @ZK_VER_MAJOR@
+#define ZK_VER_MINOR @ZK_VER_MINOR@
+#define ZK_VER_PATCH @ZK_VER_PATCH@
+#define ZK_VER_COMMA @ZK_VER_MAJOR@,@ZK_VER_MINOR@,@ZK_VER_PATCH@,0
+#define ZK_VER_STR "@ZK_VER_MAJOR@.@ZK_VER_MINOR@.@ZK_VER_PATCH@.0"

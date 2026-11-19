@@ -1,0 +1,92 @@
+ZETMAR KOLOR (krzywe, czern-biel, LUT, toning) - wtyczka dla Photoshop Elements i Photoshopa
+Zetmar - Cyfrowy Przyjaciel, zetmar.net.pl
+WERSJA 1.0.0
+=================================================================
+
+CO ROBI
+Krzywe punktowe (RGB, R, G, B), czern-biel z mikserem kolorow, sepia, monochromia, duotone,
+LUT-y z plikow .cube z biblioteka miniatur oraz toning swiatel i cieni - w jednym
+oknie z podgladem przed/po. Kolejnosc: krzywe, czern-biel, duotone, LUT, toning, sila ogolna.
+
+WAZNE
+To filtr, a nie warstwa dopasowania: zmienia aktywna warstwe na stale. Zalecany
+sposob pracy: Ctrl+J (kopia warstwy), filtr, potem krycie warstwy w panelu Warstwy.
+Elements pracuje glownie w 8 bitach - wtyczka obsluguje 8 i 16 bit.
+
+WYMAGANIA
+- Windows 10/11 64-bit
+- Photoshop Elements 2024 lub nowszy (testowane: 2026; 2024 i 2025 nietestowane,
+  powinny dzialac) albo aktualny Adobe Photoshop
+- Obrazy RGB, 8 lub 16 bitow na kanal
+
+INSTALACJA (sposob 1: instalator)
+1. Zamknij Photoshop Elements / Photoshopa.
+2. Uruchom ZetmarKolor_Setup.exe. Instalator sam wykryje zainstalowane programy Adobe
+   i zaproponuje instalacje w kazdym z nich. Odznacz te, w ktorych nie chcesz wtyczki.
+3. Uruchom program ponownie.
+
+INSTALACJA (sposob 2: reczna, z paczki ZIP)
+1. Zamknij Photoshop Elements / Photoshopa.
+2. Rozpakuj paczke ZIP do dowolnego folderu.
+3. Skopiuj plik ZetmarKolor_64.8bf do folderu wtyczek (najlepiej do podfolderu Zetmar;
+   wymaga uprawnien administratora):
+   Photoshop Elements:  C:\Program Files\Adobe\Photoshop Elements <wersja>\Plug-Ins\Zetmar\
+   Photoshop:           C:\Program Files\Adobe\Adobe Photoshop <wersja>\Plug-ins\Zetmar\
+   Bez uprawnien administratora (tylko Elements): skopiuj wtyczke do dowolnego folderu,
+   np. Dokumenty\Wtyczki, i wskaz go w Elements:
+   Edit > Preferences > Plug-Ins > Additional Plug-Ins Folder
+   (Edycja > Preferencje > Wtyczki > Dodatkowy folder wtyczek).
+4. Skopiuj zawartosc folderu LUTs (razem z podfolderami) do C:\ProgramData\ZetmarKolor\LUTs\
+   (albo do dowolnego folderu - wtyczka pozwoli go pozniej wskazac).
+5. Uruchom program ponownie.
+
+INSTALACJA (sposob 3: skrypt z paczki ZIP)
+Kliknij prawym przyciskiem install.ps1 > Uruchom za pomoca programu PowerShell.
+Skrypt poprosi o uprawnienia administratora, skopiuje wtyczke do kazdego znalezionego
+Photoshopa / Elements i LUT-y do C:\ProgramData\ZetmarKolor\LUTs.
+
+UZYCIE
+1. Zalecane: zduplikuj warstwe (Ctrl+J) - filtr zmienia aktywna warstwe na stale.
+2. Menu: Filtr > Zetmar > Kolor (krzywe, LUT, toning)...
+3. Zakladka "Krzywe": klik na wykresie dodaje punkt, przeciaganie przesuwa,
+   prawy klik albo Del usuwa, strzalki przesuwaja o 1 poziom. Kanal: RGB, Czerwony,
+   Zielony, Niebieski. Pola Wejscie/Wyjscie ustawiaja punkt dokladnie (0-255).
+   "Tylko jasnosc" - krzywa RGB zmienia jasnosc bez zmiany kolorow.
+   Gotowe ksztalty: lista "Preset" (S-krzywe, matowy, cross-process i inne).
+4. Zakladka "LUT": "Wybierz..." wskazuje dowolny plik .cube; suwak "Sila LUT"
+   miesza wynik z oryginalem (0-100%). Kolejnosc: najpierw krzywe, potem LUT.
+5a. Zakladka "Cz-B": tryb Czern-biel, Sepia albo Monochromia (jeden kolor).
+   Szesc suwakow (Czerwone ... Magenty, -200...300%) decyduje, jak jasny bedzie dany
+   kolor w szarosci; "Kolor filtru" ustawia je jak klasyczne filtry fotograficzne.
+   Sepia ma staly cieply odcien (suwak "Sila barwy"), monochromia - dowolny "Odcien".
+5d. Zakladka "Duotone" (mapa gradientu): ciemne partie dostaja kolor cieni, jasne -
+   kolor swiatel. Kolory wybierasz przyciskiem "Zmien...", kliknieciem w probke albo
+   wpisujac kod HEX. "Punkt srodkowy" w lewo = wiecej koloru swiatel; "Sila" miesza
+   z oryginalem. Gotowe zestawy: granat/pomarancz, zielen/zloto, fiolet/roz,
+   braz/krem, czern/turkus. Szarosc liczy mikser z zakladki "Cz-B".
+5b. Zakladka "Toning": osobny kolor (odcien + sila) dla swiatel i dla cieni,
+   "Balans" przesuwa granice miedzy nimi. Presety: klasyczny, teal & orange i inne.
+5c. Zakladka "Biblioteka": miniatury LUT-ow z folderu C:\ProgramData\ZetmarKolor\LUTs
+   liczone na Twoim zdjeciu. Klik w miniature stosuje LUT. "Dodaj pliki..." kopiuje
+   pliki .cube do biblioteki (uszkodzone sa odrzucane), "Usun" przenosi zaznaczone
+   pliki do Kosza (mozna je przywrocic). Podfoldery biblioteki to kategorie.
+   "Zmien..." pozwala wskazac inny folder biblioteki.
+6. Podglad: "Po", "Przed" albo "Podzial: przed | po". Przytrzymanie przycisku myszy
+   na podgladzie pokazuje "przed".
+7. "Sila ogolna" (na dole okna) miesza caly wynik z oryginalem.
+   Kliknij OK. Ctrl+F powtarza filtr z ostatnimi ustawieniami.
+   Uwaga: LUT-y logarytmiczne (S-Log, V-Log itp.) wymagaja zdjecia w odpowiedniej
+   przestrzeni, inaczej wygladaja zle.
+7b. Pod podgladem: "Zapisz look..." zapisuje caly wyglad (krzywe, cz-b, duotone, LUT,
+   toning, sile ogolna) do pliku .zklook, "Wczytaj look..." przywraca go. "Eksport do
+   .cube..." zapisuje caly biezacy wyglad jako LUT 33x33x33 do uzycia w innych programach.
+8. Jezyk okna (polski / angielski) zmienisz na gorze okna, w polu "Jezyk / Language".
+LUT-y z paczki (60 autorskich LUT-ow Zetmar) sa w Bibliotece podzielone na kategorie:
+Seasons, Weather, Light, Black and White, Color Enhancement. Zalecany start: sila 25-50%.
+Diagnostyka (w razie problemow): utworz pusty plik %APPDATA%\ZetmarKolor\debug.flag -
+pojawi sie zakladka "Test", a kazde uruchomienie zapisze raport diagnostic_report.txt.
+
+ODINSTALOWANIE
+Ustawienia Windows > Aplikacje > "Zetmar Kolor" > Odinstaluj,
+albo install.ps1 -Uninstall, albo usun recznie ZetmarKolor_64.8bf z folderu wtyczek
+i folder C:\ProgramData\ZetmarKolor.

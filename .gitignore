@@ -1,0 +1,7 @@
+build/
+tests/out/
+*.tmp
+sdk/
+dist/
+LUTS/*.zip
+Media/
