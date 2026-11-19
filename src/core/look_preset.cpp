@@ -56,6 +56,30 @@ bool ReadInts(const std::string& rest, std::vector<long long>& out, size_t minCo
     return out.size() >= minCount;
 }
 
+// Sciezka LUT z presetu (plik moze pochodzic z internetu) to lista DOZWOLONYCH form, nie zabronionych: tylko
+// bezwzgledna sciezka z litera dysku ("X:\..." albo "X:/..."), bez znakow '?' i ':' poza literą dysku (to wyklucza
+// UNC, \\?\, \\.\, \??\ i strumienie NTFS), konczaca sie na ".cube", na dysku, ktory nie jest sieciowy. Otwarcie
+// sciezki sieciowej wysylaloby dane logowania NTLM na obcy serwer.
+bool IsSafeLocalCubePath(const std::wstring& w) {
+    const size_t n = w.size();
+    if (n < 8 || n >= 1024) return false;  // "C:\x.cube" ma 9 znakow; krotsze nie moga byc poprawne
+    const wchar_t d = w[0];
+    if (!((d >= L'A' && d <= L'Z') || (d >= L'a' && d <= L'z')) || w[1] != L':' || (w[2] != L'\\' && w[2] != L'/'))
+        return false;
+    for (size_t i = 2; i < n; ++i)
+        if (w[i] == L'?' || w[i] == L':' || w[i] == L'*' || w[i] == L'"' || w[i] == L'<' || w[i] == L'>' ||
+            w[i] == L'|' || w[i] < 32)
+            return false;
+    if (_wcsicmp(w.c_str() + n - 5, L".cube") != 0) return false;
+    // Kanonizacja i typ dysku (dysk sieciowy zmapowany na litere tez odpada).
+    wchar_t full[1024];
+    const DWORD got = GetFullPathNameW(w.c_str(), 1024, full, nullptr);
+    if (got == 0 || got >= 1024) return false;
+    if (!(full[0] && full[1] == L':' && full[2] == L'\\')) return false;
+    const wchar_t root[4] = {full[0], L':', L'\\', 0};
+    return GetDriveTypeW(root) != DRIVE_REMOTE;
+}
+
 }  // namespace
 
 std::string LookToText(const FilterParams& p) {
@@ -156,14 +180,7 @@ bool LookFromText(const char* text, size_t len, FilterParams& p) {
         } else if (key == "lutpath") {
             std::wstring w = FromUtf8(rest);
             if (w.size() >= 1024 || (w.empty() && !rest.empty())) return false;
-            // Preset z internetu nie moze wskazywac sciezki sieciowej ani urzadzenia (UNC, \\?\, \\.\): samo
-            // otwarcie takiego pliku wysylaloby dane logowania NTLM na obcy serwer. Dozwolone tylko pliki .cube.
-            auto sep = [](wchar_t c) { return c == L'\\' || c == L'/'; };
-            if (w.size() >= 2 && sep(w[0]) && sep(w[1])) return false;
-            if (!w.empty()) {
-                const size_t n = w.size();
-                if (n < 6 || _wcsicmp(w.c_str() + n - 5, L".cube") != 0) return false;
-            }
+            if (!w.empty() && !IsSafeLocalCubePath(w)) return false;
             wcsncpy_s(t.lutPath, w.c_str(), _TRUNCATE);
         } else if (key == "overall") {
             if (!ReadInts(rest, v, 1, 1)) return false;

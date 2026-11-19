@@ -147,7 +147,10 @@ static void RunNewTests() {
 
         // Sciezki LUT z presetu: sieciowe (UNC), urzadzen i spoza .cube odrzucone; zwykla sciezka .cube przyjeta.
         const char* badPaths[] = {"\\\\serwer\\udzial\\x.cube", "//serwer/udzial/x.cube", "\\\\?\\C:\\x.cube",
-                                  "\\\\.\\pipe\\x.cube", "C:\\Windows\\system32\\cmd.exe", "C:\\x.cube.txt", "x"};
+                                  "\\\\.\\pipe\\x.cube", "C:\\Windows\\system32\\cmd.exe", "C:\\x.cube.txt", "x",
+                                  "\\??\\C:\\x.cube", "\\??\\UNC\\serwer\\udzial\\x.cube", "\\x.cube", "x.cube",
+                                  "foldery\\x.cube", "C:x.cube", "C:\\a\\x.cube:strumien.cube", "C:\\a?b\\x.cube",
+                                  "C:\\a\\*.cube", "\\\\serwer\\C$\\x.cube", "//?/UNC/serwer/udzial/x.cube"};
         bool pathsRejected = true;
         for (const char* bp : badPaths) {
             std::string t = std::string("ZKLOOK 1\ntoning 1 2 3 4 5 6\nlutpath ") + bp + "\n";
@@ -155,9 +158,9 @@ static void RunNewTests() {
             if (LookFromText(t.data(), t.size(), p)) pathsRejected = false;
         }
         CHECK(pathsRejected, "look: sciezka LUT sieciowa (UNC), urzadzenia lub nie-.cube odrzucona");
-        const std::string goodPath = "ZKLOOK 1\ntoning 1 2 3 4 5 6\nlutpath D:\\Moje LUT-y\\Film.CUBE\n";
+        const std::string goodPath = "ZKLOOK 1\ntoning 1 2 3 4 5 6\nlutpath C:\\Moje LUT-y\\Film.CUBE\n";
         FilterParams gp;
-        CHECK(LookFromText(goodPath.data(), goodPath.size(), gp) && wcscmp(gp.lutPath, L"D:\\Moje LUT-y\\Film.CUBE") == 0,
+        CHECK(LookFromText(goodPath.data(), goodPath.size(), gp) && wcscmp(gp.lutPath, L"C:\\Moje LUT-y\\Film.CUBE") == 0,
               "look: zwykla sciezka lokalna .cube przyjeta");
 
         // Nieznane klucze pomijane, wartosci spoza zakresu przyciete.

@@ -40,6 +40,31 @@ function Assert-NoReparsePoint([string]$Path) {
         if ($bad) { throw "Wewnatrz sa dowiazania (junction / link) / Reparse points inside: $($bad[0].FullName)" }
     }
 }
+
+# SID wlascicieli, ktorym ufamy w ProgramData: Administratorzy, SYSTEM, TrustedInstaller.
+$trustedOwners = @('S-1-5-32-544', 'S-1-5-18', 'S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464')
+function Assert-TrustedOwner([string]$Path) {
+    $owner = (Get-Acl -LiteralPath $Path).GetOwner([Security.Principal.SecurityIdentifier]).Value
+    if ($trustedOwners -notcontains $owner) {
+        throw "Folder nalezy do innego uzytkownika (usun go albo zmien nazwe) / Folder is owned by a non-admin account (delete or rename it): $Path"
+    }
+}
+
+# Folder ProgramData\ZetmarKolor: tworzony przez administratora i od razu zamykany (zapis tylko Administratorzy i
+# SYSTEM, Users - odczyt). Dopiero potem biblioteka LUTs dostaje prawo zapisu dla Users. Gdy folder juz istnieje,
+# musi miec zaufanego wlasciciela i nie moze byc linkiem - inaczej instalacja jest przerywana (nic nie kasujemy).
+function Initialize-DataRoot {
+    $root = Split-Path $lutTarget -Parent
+    if (Test-Path -LiteralPath $root) {
+        Assert-NoReparsePoint $root
+        Assert-TrustedOwner $root
+    } else {
+        New-Item -ItemType Directory $root | Out-Null
+    }
+    & icacls $root /inheritance:r /grant:r '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-545:(OI)(CI)RX' /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "icacls nie powiodl sie / icacls failed: $root" }
+    Assert-NoReparsePoint $root
+}
 $targets = @()
 foreach ($root in @("$env:ProgramFiles\Adobe", "${env:ProgramFiles(x86)}\Adobe")) {
     if (-not (Test-Path $root)) { continue }
@@ -60,7 +85,7 @@ if ($Uninstall) {
     }
     # LUT-y: usuwamy tylko pliki z paczki (te same sciezki wzgledne). Pliki dodane przez uzytkownika zostaja.
     if ((Test-Path $lutTarget) -and (Test-Path $Luts)) {
-        try { Assert-NoReparsePoint $lutTarget } catch { Write-Host "Przerwano / Aborted: $($_.Exception.Message)"; Start-Sleep 4; exit 1 }
+        try { Assert-NoReparsePoint $lutTarget; Assert-TrustedOwner (Split-Path $lutTarget -Parent) } catch { Write-Host "Przerwano / Aborted: $($_.Exception.Message)"; Start-Sleep 4; exit 1 }
         $src = (Resolve-Path $Luts).Path
         Get-ChildItem $src -Recurse -File | ForEach-Object {
             $rel = $_.FullName.Substring($src.Length).TrimStart('\')
@@ -94,12 +119,17 @@ foreach ($t in $targets) {
     Write-Host "Zainstalowano / Installed: $dir"
 }
 if (Test-Path $Luts) {
-    try { Assert-NoReparsePoint $lutTarget } catch { Write-Host "Przerwano / Aborted: $($_.Exception.Message)"; Read-Host 'Enter'; exit 1 }
-    New-Item -ItemType Directory $lutTarget -Force | Out-Null
-    try { Assert-NoReparsePoint $lutTarget } catch { Write-Host "Przerwano / Aborted: $($_.Exception.Message)"; Read-Host 'Enter'; exit 1 }
-    # Biblioteka: zwykly uzytkownik (grupa Users, S-1-5-32-545) moze dodawac i usuwac pliki z poziomu wtyczki.
-    # Uprawnienia ustawiane raz na folderze (dziedziczone przez nowe pliki), bez /T i bez podazania za linkami.
-    & icacls $lutTarget /grant '*S-1-5-32-545:(OI)(CI)M' /Q | Out-Null
+    try {
+        Initialize-DataRoot
+        Assert-NoReparsePoint $lutTarget
+        if (-not (Test-Path -LiteralPath $lutTarget)) { New-Item -ItemType Directory $lutTarget | Out-Null }
+        Assert-NoReparsePoint $lutTarget
+        # Biblioteka: zwykly uzytkownik (Users, S-1-5-32-545) moze dodawac i usuwac pliki z poziomu wtyczki.
+        # Prawo zapisu tylko na folderze LUTs (dziedziczone przez nowe pliki), bez /T i bez podazania za linkami.
+        & icacls $lutTarget /grant '*S-1-5-32-545:(OI)(CI)M' /Q | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "icacls nie powiodl sie / icacls failed: $lutTarget" }
+        Assert-NoReparsePoint $lutTarget
+    } catch { Write-Host "Przerwano / Aborted: $($_.Exception.Message)"; Read-Host 'Enter'; exit 1 }
     # Cala zawartosc (podfoldery = kategorie Biblioteki).
     Copy-Item (Join-Path $Luts '*') $lutTarget -Recurse -Force
     Write-Host "LUT-y / LUTs: $lutTarget ($((Get-ChildItem $lutTarget -Filter *.cube -Recurse).Count))"

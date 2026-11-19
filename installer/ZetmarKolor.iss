@@ -50,6 +50,10 @@ english.NothingSelected=Select at least one program.
 english.CopyFail=Could not copy the plug-in to:
 english.Docs=Installation and usage guide
 english.LutFolder=LUT folder
+polish.DataDirUntrusted=Folder %1 już istnieje, ale jest dowiązaniem albo należy do konta innego niż administrator. Ze względów bezpieczeństwa instalacja została przerwana. Usuń lub zmień nazwę tego folderu i uruchom instalator ponownie.
+english.DataDirUntrusted=The folder %1 already exists but is a link or belongs to a non-administrator account. For security reasons setup was stopped. Delete or rename that folder and run setup again.
+polish.AclFailed=Nie udało się zabezpieczyć folderu danych:
+english.AclFailed=Could not secure the data folder:
 polish.AffinityItem=Affinity (folder wtyczek Zetmar Kolor)
 polish.AffinityNote=Wtyczka została skopiowana do folderu:%n%1%n%nAffinity znajduje wtyczki w folderach Photoshopa i Elements automatycznie. Jeśli nie masz ich zainstalowanych, w Affinity otwórz Ustawienia > Photoshop Plugins, dodaj powyższy folder jako folder wyszukiwania i uruchom program ponownie.
 english.AffinityItem=Affinity (Zetmar Color plug-in folder)
@@ -126,6 +130,31 @@ begin
     Result := RC = 0;
 end;
 
+{ Folder danych w ProgramData: jesli juz istnieje, musi miec zaufanego wlasciciela (Administratorzy / SYSTEM /
+  TrustedInstaller) i nie byc junction / linkiem. Inaczej zwykly uzytkownik moglby przekierowac instalacje. }
+function InitializeSetup: Boolean;
+var
+  RC: Integer;
+  Dir: string;
+begin
+  Result := True;
+  Dir := ExpandConstant('{commonappdata}\ZetmarKolor');
+  if not DirExists(Dir) then Exit;
+  if Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+    '-NoProfile -NonInteractive -Command "$p = ''' + Dir + '''; $i = Get-Item -LiteralPath $p -Force; ' +
+    'if ([int]$i.Attributes -band 1024) { exit 2 }; ' +
+    '$o = (Get-Acl -LiteralPath $p).GetOwner([Security.Principal.SecurityIdentifier]).Value; ' +
+    'if (@(''S-1-5-32-544'',''S-1-5-18'',''S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464'') -notcontains $o) { exit 3 }; exit 0"',
+    '', SW_HIDE, ewWaitUntilTerminated, RC) then
+  begin
+    if RC <> 0 then
+    begin
+      SuppressibleMsgBox(FmtMessage(CustomMessage('DataDirUntrusted'), [Dir]), mbError, MB_OK, IDOK);
+      Result := False;
+    end;
+  end;
+end;
+
 procedure InitializeWizard;
 begin
   Paths := TStringList.Create;
@@ -191,6 +220,16 @@ var
   Dst, Src: string;
   Targets: TStringList;
 begin
+  if CurStep = ssInstall then
+  begin
+    { Folder danych zamykamy PRZED kopiowaniem plikow: zapis tylko Administratorzy i SYSTEM, Users - odczyt.
+      Prawo zapisu dla Users dostaje wylacznie podfolder LUTs (sekcja [Dirs]). }
+    ForceDirectories(ExpandConstant('{app}'));
+    if not Exec(ExpandConstant('{sys}\icacls.exe'),
+      '"' + ExpandConstant('{app}') + '" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F *S-1-5-32-545:(OI)(CI)RX /Q',
+      '', SW_HIDE, ewWaitUntilTerminated, I) or (I <> 0) then
+      RaiseException(CustomMessage('AclFailed') + ' ' + ExpandConstant('{app}'));
+  end;
   if CurStep <> ssPostInstall then Exit;
   Src := ExpandConstant('{app}\ZetmarKolor_64.8bf');
   Targets := TStringList.Create;
