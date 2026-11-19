@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "core/look_preset.h"
+#include "core/pipl_binary.h"
 #include "core/settings.h"
 #include "plugin/host.h"
 
@@ -144,6 +145,21 @@ static void RunNewTests() {
         FilterParams h;
         CHECK(!LookFromText(huge.data(), huge.size(), h), "look: plik powyzej 1 MB odrzucony");
 
+        // Sciezki LUT z presetu: sieciowe (UNC), urzadzen i spoza .cube odrzucone; zwykla sciezka .cube przyjeta.
+        const char* badPaths[] = {"\\\\serwer\\udzial\\x.cube", "//serwer/udzial/x.cube", "\\\\?\\C:\\x.cube",
+                                  "\\\\.\\pipe\\x.cube", "C:\\Windows\\system32\\cmd.exe", "C:\\x.cube.txt", "x"};
+        bool pathsRejected = true;
+        for (const char* bp : badPaths) {
+            std::string t = std::string("ZKLOOK 1\ntoning 1 2 3 4 5 6\nlutpath ") + bp + "\n";
+            FilterParams p;
+            if (LookFromText(t.data(), t.size(), p)) pathsRejected = false;
+        }
+        CHECK(pathsRejected, "look: sciezka LUT sieciowa (UNC), urzadzenia lub nie-.cube odrzucona");
+        const std::string goodPath = "ZKLOOK 1\ntoning 1 2 3 4 5 6\nlutpath D:\\Moje LUT-y\\Film.CUBE\n";
+        FilterParams gp;
+        CHECK(LookFromText(goodPath.data(), goodPath.size(), gp) && wcscmp(gp.lutPath, L"D:\\Moje LUT-y\\Film.CUBE") == 0,
+              "look: zwykla sciezka lokalna .cube przyjeta");
+
         // Nieznane klucze pomijane, wartosci spoza zakresu przyciete.
         const char* ok = "ZKLOOK 1\nfutureThing 1 2 3\ntoning 1 2 999 4 999 5000\noverall 999\nbw 1 9999 0 0 0 0 -9999 400 500\n";
         FilterParams p;
@@ -271,5 +287,33 @@ static void RunNewTests() {
         DeleteFileW(path.c_str());
         CHECK(files == 1, "zapis atomowy: bez pozostawionych plikow tymczasowych");
         CHECK(!WriteFileAtomic(L"Z:\\nie\\ma\\takiego\\folderu\\plik.txt", "x"), "zapis atomowy: blad zwracany dla zlej sciezki");
+    }
+    // --- Klasyczny PIPL (dla Affinity i innych hostow, ktore nie czytaja JSON)
+    {
+        const std::vector<uint8_t> b = BuildClassicPipl();
+        auto u32 = [&](size_t o) { return (uint32_t)b[o] | (uint32_t)b[o + 1] << 8 | (uint32_t)b[o + 2] << 16 | (uint32_t)b[o + 3] << 24; };
+        bool ok = b.size() > 10 && b[0] == 1;
+        const uint32_t count = ok ? u32(6) : 0;
+        size_t o = 10;
+        std::vector<std::string> keys;
+        for (uint32_t i = 0; ok && i < count; ++i) {
+            if (o + 16 > b.size() || std::memcmp(&b[o], "MIB8", 4) != 0) { ok = false; break; }
+            std::string key(4, ' ');
+            for (int k = 0; k < 4; ++k) key[(size_t)k] = (char)b[o + 7 - (size_t)k];
+            const uint32_t len = u32(o + 12);
+            if (len % 4 != 0 || o + 16 + len > b.size() || u32(o + 8) != 0) { ok = false; break; }
+            keys.push_back(key);
+            o += 16 + len;
+        }
+        ok = ok && o == b.size();
+        auto has = [&](const char* k) { return std::find(keys.begin(), keys.end(), k) != keys.end(); };
+        CHECK(ok && count == 12 && has("kind") && has("name") && has("catg") && has("8664") && has("enbl") &&
+                  has("mode") && has("fici"),
+              "PIPL binarny: poprawny uklad (12 wlasciwosci, dlugosci wielokrotnosci 4, brak nadmiaru)");
+        bool entry = false, kindOk = false;
+        const std::string all(b.begin(), b.end());
+        entry = all.find("PluginMain") != std::string::npos;
+        kindOk = all.find("MFB8") != std::string::npos;
+        CHECK(entry && kindOk, "PIPL binarny: punkt wejscia PluginMain i rodzaj filtra (8BFM)");
     }
 }

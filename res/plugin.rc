@@ -4,6 +4,9 @@
 // Opis wtyczki (PiPL) w formacie JSON, odczytywany przez Photoshopa/Elements z zasobow DLL.
 JSON_PIPL JSON "pipl.json"
 
+// Klasyczny PIPL (generowany z kodu: tools/make_pipl.cpp) - dla programow, ktore nie czytaja JSON (np. Affinity).
+16000 PIPL "zk.pipl"
+
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION ZK_VER_COMMA
  PRODUCTVERSION ZK_VER_COMMA

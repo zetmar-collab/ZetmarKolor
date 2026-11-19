@@ -34,6 +34,7 @@ add_library(zkcore STATIC
     src/core/i18n.cpp
     src/core/settings.cpp
     src/core/look_preset.cpp
+    src/core/pipl_binary.cpp
     src/plugin/params.cpp
 )
 target_include_directories(zkcore PUBLIC src)
@@ -57,6 +58,15 @@ set(ZK_SDK_INCLUDES
     ${PS_SDK_DIR}/photoshopapi/pica_sp
     ${PS_SDK_DIR}/samplecode/common/includes
 )
+# Klasyczny zasob PIPL (dla programow, ktore nie czytaja JSON, np. Affinity) generowany z kodu rdzenia.
+add_executable(zk_makepipl tools/make_pipl.cpp)
+target_link_libraries(zk_makepipl PRIVATE zkcore)
+set(ZK_PIPL_BIN "${CMAKE_BINARY_DIR}/generated/zk.pipl")
+add_custom_command(OUTPUT "${ZK_PIPL_BIN}"
+    COMMAND zk_makepipl "${ZK_PIPL_BIN}"
+    DEPENDS zk_makepipl
+    COMMENT "Generowanie klasycznego PIPL")
+set_source_files_properties(res/plugin.rc PROPERTIES OBJECT_DEPENDS "${ZK_PIPL_BIN}")
 add_library(ZetmarKolor SHARED
     src/plugin/plugin_main.cpp
     src/plugin/host.cpp

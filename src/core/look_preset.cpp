@@ -156,6 +156,14 @@ bool LookFromText(const char* text, size_t len, FilterParams& p) {
         } else if (key == "lutpath") {
             std::wstring w = FromUtf8(rest);
             if (w.size() >= 1024 || (w.empty() && !rest.empty())) return false;
+            // Preset z internetu nie moze wskazywac sciezki sieciowej ani urzadzenia (UNC, \\?\, \\.\): samo
+            // otwarcie takiego pliku wysylaloby dane logowania NTLM na obcy serwer. Dozwolone tylko pliki .cube.
+            auto sep = [](wchar_t c) { return c == L'\\' || c == L'/'; };
+            if (w.size() >= 2 && sep(w[0]) && sep(w[1])) return false;
+            if (!w.empty()) {
+                const size_t n = w.size();
+                if (n < 6 || _wcsicmp(w.c_str() + n - 5, L".cube") != 0) return false;
+            }
             wcsncpy_s(t.lutPath, w.c_str(), _TRUNCATE);
         } else if (key == "overall") {
             if (!ReadInts(rest, v, 1, 1)) return false;

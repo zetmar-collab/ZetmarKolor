@@ -87,6 +87,14 @@ Seasons, Weather, Light, Black and White, Color Enhancement. Recommended start: 
 Diagnostics (if something goes wrong): create an empty file %APPDATA%\ZetmarKolor\debug.flag -
 a "Test" tab appears and every run saves a diagnostic_report.txt report.
 
+AFFINITY (Photo)
+The plug-in also works in Affinity. Affinity finds plug-ins in the Photoshop and
+Photoshop Elements folders automatically (a plug-in installed there is visible after
+restarting Affinity). If you do not have them, the installer offers a separate folder
+C:\ProgramData\ZetmarKolor\Plugins - in Affinity open Settings > Photoshop Plugins,
+add that folder as a search folder and restart the program.
+Look for "Zetmar > Kolor (krzywe, LUT, toning)..." among the filters / plug-ins.
+
 UNINSTALL
 Windows Settings > Apps > "Zetmar Kolor" > Uninstall,
 or install.ps1 -Uninstall, or manually delete ZetmarKolor_64.8bf from the plug-ins folder

@@ -204,6 +204,8 @@ DLLExport MACPASCAL void PluginMain(const int16 selector, FilterRecordPtr filter
         g_fr = filterRecord;
         g_result = result;
         g_data = (PluginData*)*data;
+        // Tryb diagnostyczny (debug.flag): ślad wywołań, pomaga ustalić, czy i jak host woła wtyczkę.
+        DebugLog(L"PluginMain: selektor %d, host %p", (int)selector, (void*)filterRecord);
 
         if (selector == filterSelectorAbout) {
             DoAbout((AboutRecord*)filterRecord);

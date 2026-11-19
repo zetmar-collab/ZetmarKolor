@@ -23,6 +23,23 @@ if (-not $isAdmin) {
 }
 
 $lutTarget = Join-Path $env:ProgramData 'ZetmarKolor\LUTs'
+
+# Skrypt dziala jako administrator na folderze, w ktorym zwykly uzytkownik moze tworzyc wpisy (ProgramData).
+# Odmawiamy pracy, gdy folder (albo cos pod nim) jest junction / linkiem symbolicznym - inaczej zapis, zmiana
+# uprawnien albo kasowanie moglyby trafic poza biblioteke.
+function Assert-NoReparsePoint([string]$Path) {
+    $p = $Path
+    while ($p -and $p.Length -gt $env:ProgramData.Length) {
+        if ((Test-Path -LiteralPath $p) -and ((Get-Item -LiteralPath $p -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            throw "Folder jest dowiazaniem (junction / link) / Folder is a reparse point: $p"
+        }
+        $p = Split-Path $p -Parent
+    }
+    if (Test-Path -LiteralPath $Path) {
+        $bad = Get-ChildItem -LiteralPath $Path -Recurse -Force -Attributes ReparsePoint -ErrorAction SilentlyContinue
+        if ($bad) { throw "Wewnatrz sa dowiazania (junction / link) / Reparse points inside: $($bad[0].FullName)" }
+    }
+}
 $targets = @()
 foreach ($root in @("$env:ProgramFiles\Adobe", "${env:ProgramFiles(x86)}\Adobe")) {
     if (-not (Test-Path $root)) { continue }
@@ -43,6 +60,7 @@ if ($Uninstall) {
     }
     # LUT-y: usuwamy tylko pliki z paczki (te same sciezki wzgledne). Pliki dodane przez uzytkownika zostaja.
     if ((Test-Path $lutTarget) -and (Test-Path $Luts)) {
+        try { Assert-NoReparsePoint $lutTarget } catch { Write-Host "Przerwano / Aborted: $($_.Exception.Message)"; Start-Sleep 4; exit 1 }
         $src = (Resolve-Path $Luts).Path
         Get-ChildItem $src -Recurse -File | ForEach-Object {
             $rel = $_.FullName.Substring($src.Length).TrimStart('\')
@@ -76,11 +94,14 @@ foreach ($t in $targets) {
     Write-Host "Zainstalowano / Installed: $dir"
 }
 if (Test-Path $Luts) {
+    try { Assert-NoReparsePoint $lutTarget } catch { Write-Host "Przerwano / Aborted: $($_.Exception.Message)"; Read-Host 'Enter'; exit 1 }
     New-Item -ItemType Directory $lutTarget -Force | Out-Null
+    try { Assert-NoReparsePoint $lutTarget } catch { Write-Host "Przerwano / Aborted: $($_.Exception.Message)"; Read-Host 'Enter'; exit 1 }
+    # Biblioteka: zwykly uzytkownik (grupa Users, S-1-5-32-545) moze dodawac i usuwac pliki z poziomu wtyczki.
+    # Uprawnienia ustawiane raz na folderze (dziedziczone przez nowe pliki), bez /T i bez podazania za linkami.
+    & icacls $lutTarget /grant '*S-1-5-32-545:(OI)(CI)M' /Q | Out-Null
     # Cala zawartosc (podfoldery = kategorie Biblioteki).
     Copy-Item (Join-Path $Luts '*') $lutTarget -Recurse -Force
-    # Biblioteka: zwykly uzytkownik (grupa Users, S-1-5-32-545) moze dodawac i usuwac pliki z poziomu wtyczki.
-    & icacls $lutTarget /grant '*S-1-5-32-545:(OI)(CI)M' /T /Q | Out-Null
     Write-Host "LUT-y / LUTs: $lutTarget ($((Get-ChildItem $lutTarget -Filter *.cube -Recurse).Count))"
 }
 Start-Sleep 2

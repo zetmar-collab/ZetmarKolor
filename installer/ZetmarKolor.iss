@@ -50,6 +50,10 @@ english.NothingSelected=Select at least one program.
 english.CopyFail=Could not copy the plug-in to:
 english.Docs=Installation and usage guide
 english.LutFolder=LUT folder
+polish.AffinityItem=Affinity (folder wtyczek Zetmar Kolor)
+polish.AffinityNote=Wtyczka została skopiowana do folderu:%n%1%n%nAffinity znajduje wtyczki w folderach Photoshopa i Elements automatycznie. Jeśli nie masz ich zainstalowanych, w Affinity otwórz Ustawienia > Photoshop Plugins, dodaj powyższy folder jako folder wyszukiwania i uruchom program ponownie.
+english.AffinityItem=Affinity (Zetmar Color plug-in folder)
+english.AffinityNote=The plug-in was copied to:%n%1%n%nAffinity finds plug-ins in Photoshop and Elements folders automatically. If you do not have them installed, open Affinity Settings > Photoshop Plugins, add the folder above as a search folder and restart the program.
 
 [Dirs]
 ; Biblioteka LUT-ow: zwykly uzytkownik moze dodawac i usuwac pliki z poziomu wtyczki.
@@ -73,6 +77,8 @@ var
   ManualPage: TInputDirWizardPage;
   Paths: TStringList;
   Installed: string;
+  AffinityDir: string;
+  AffinityChosen: Boolean;
 
 procedure AddPluginsDir(const Root, Caption: string);
 var
@@ -107,6 +113,19 @@ begin
   end;
 end;
 
+{ Affinity (Photo / unified app): pakiet Sklepu (MSIX) albo klasyczna instalacja w Program Files\Affinity. }
+function DetectAffinity: Boolean;
+var
+  RC: Integer;
+begin
+  Result := DirExists(ExpandConstant('{commonpf64}\Affinity'));
+  if Result then Exit;
+  if Exec(ExpandConstant('{sys}\WindowsPowerShell1.0\powershell.exe'),
+    '-NoProfile -NonInteractive -Command "if (Get-AppxPackage -AllUsers | Where-Object { $_.Name -match ''Affinity'' }) { exit 0 } else { exit 1 }"',
+    '', SW_HIDE, ewWaitUntilTerminated, RC) then
+    Result := RC = 0;
+end;
+
 procedure InitializeWizard;
 begin
   Paths := TStringList.Create;
@@ -119,6 +138,13 @@ begin
   Checks.Height := ListPage.SurfaceHeight;
   ScanAdobe(ExpandConstant('{commonpf64}\Adobe'));
   ScanAdobe(ExpandConstant('{commonpf32}\Adobe'));
+  { Affinity nie ma stalego folderu wtyczek: osobny folder w ProgramData, dodawany w ustawieniach Affinity. }
+  AffinityDir := ExpandConstant('{commonappdata}\ZetmarKolor\Plugins');
+  if DetectAffinity then
+  begin
+    Checks.AddCheckBox(CustomMessage('AffinityItem') + '  (' + AffinityDir + ')', '', 0, True, True, False, True, nil);
+    Paths.Add(AffinityDir);
+  end;
 
   ManualPage := CreateInputDirPage(ListPage.ID, CustomMessage('ManualTitle'), CustomMessage('ManualDesc'),
     CustomMessage('ManualHint'), False, '');
@@ -178,7 +204,13 @@ begin
       Targets.Add(ManualPage.Values[0]);
     for I := 0 to Targets.Count - 1 do
     begin
-      Dst := Targets[I] + '\Zetmar';
+      if Targets[I] = AffinityDir then
+      begin
+        Dst := Targets[I];
+        AffinityChosen := True;
+      end
+      else
+        Dst := Targets[I] + '\Zetmar';
       ForceDirectories(Dst);
       if FileCopy(Src, Dst + '\ZetmarKolor_64.8bf', False) then
         Installed := Installed + Dst + ';'
@@ -189,6 +221,8 @@ begin
     Targets.Free;
   end;
   RegWriteStringValue(HKLM, 'Software\Zetmar\Kolor', 'Targets', Installed);
+  if AffinityChosen then
+    SuppressibleMsgBox(FmtMessage(CustomMessage('AffinityNote'), [AffinityDir]), mbInformation, MB_OK, IDOK);
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

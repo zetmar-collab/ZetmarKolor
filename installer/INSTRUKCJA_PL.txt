@@ -86,6 +86,14 @@ Seasons, Weather, Light, Black and White, Color Enhancement. Zalecany start: sil
 Diagnostyka (w razie problemow): utworz pusty plik %APPDATA%\ZetmarKolor\debug.flag -
 pojawi sie zakladka "Test", a kazde uruchomienie zapisze raport diagnostic_report.txt.
 
+AFFINITY (Photo)
+Wtyczka dziala tez w Affinity. Affinity znajduje wtyczki w folderach Photoshopa i
+Photoshop Elements automatycznie (zainstalowana tam wtyczka bedzie widoczna po
+ponownym uruchomieniu Affinity). Jesli ich nie masz, instalator oferuje osobny folder
+C:\ProgramData\ZetmarKolor\Plugins - w Affinity otworz Ustawienia > Photoshop Plugins,
+dodaj ten folder jako folder wyszukiwania i uruchom program ponownie.
+Szukaj pozycji "Zetmar > Kolor (krzywe, LUT, toning)..." wsrod filtrow / wtyczek.
+
 ODINSTALOWANIE
 Ustawienia Windows > Aplikacje > "Zetmar Kolor" > Odinstaluj,
 albo install.ps1 -Uninstall, albo usun recznie ZetmarKolor_64.8bf z folderu wtyczek
